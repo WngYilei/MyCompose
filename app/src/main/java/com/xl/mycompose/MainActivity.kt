@@ -1,17 +1,16 @@
 package com.xl.mycompose
 
-import android.os.Bundle
-import android.util.Log
+import android.os.*
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.annotation.RequiresApi
 import androidx.compose.material.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Modifier
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -22,27 +21,33 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.xl.mycompose.ui.theme.MyComposeTheme
+import com.xl.mycompose.ui.theme.Purple500
+import com.xl.mycompose.ui.theme.Purple700
+import com.xl.mycompose.ui.theme.Teal100
+import com.xl.mycompose.ui.theme.Teal200
 
 class MainActivity : ComponentActivity() {
-
     @ExperimentalMaterialApi
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             MainScreen()
         }
+        if (!FcfrtAppBhUtils.isIgnoringBatteryOptimizations(this)) {
+            FcfrtAppBhUtils.requestIgnoreBatteryOptimizations(this)
+        }
+
     }
 }
 
-
+val title = mutableStateOf("")
+val color = mutableStateOf(Teal100)
 @ExperimentalMaterialApi
 @Preview(showBackground = true)
 @Composable
 fun MainScreen() {
     val navController = rememberNavController()
     Scaffold(topBar = { TitleBar() }, bottomBar = { BottomNavigationBar(navController) }) {
-        Log.e("TAG", "MainScreen: ")
         Navigation(navController = navController)
     }
 }
@@ -52,15 +57,25 @@ fun MainScreen() {
 fun Navigation(navController: NavHostController) {
     NavHost(navController, startDestination = NavigationItem.Home.route) {
         composable(NavigationItem.Home.route) {
-
+            title.value = "主页"
+            color.value = Teal100
+            HomeScreen()
         }
         composable(NavigationItem.Movies.route) {
-            MoviesScreen()
+            title.value = "发现"
+
+            color.value = Purple500
+            FindScreen()
         }
         composable(NavigationItem.Books.route) {
-            BooksScreen()
+            title.value = "热门"
+            color.value = Purple700
+            HotScreen()
         }
         composable(NavigationItem.Profile.route) {
+            title.value = "我的"
+
+            color.value = Teal200
             ProfileScreen()
         }
     }
@@ -70,12 +85,13 @@ fun Navigation(navController: NavHostController) {
 @Composable
 fun TitleBar() {
     TopAppBar(
-        title = { Text(text = "Compose", fontSize = 18.sp) },
-        backgroundColor = colorResource(id = R.color.purple_200),
-        contentColor = Color.White
+        title = { Text(text = title.value, fontSize = 18.sp) },
+        backgroundColor = color.value,
+        contentColor = Color.Black
     )
 }
 
+@RequiresApi(Build.VERSION_CODES.P)
 @ExperimentalMaterialApi
 @Composable
 fun BottomNavigationBar(navController: NavController) {
@@ -86,17 +102,18 @@ fun BottomNavigationBar(navController: NavController) {
         NavigationItem.Profile
     )
     BottomNavigation(
-        backgroundColor = Color.Blue,
-        contentColor = Color.White
+        backgroundColor = Color.White,
+        contentColor = Color.Black
     ) {
         val navBackStackEntry by navController.currentBackStackEntryAsState()
         val currentRoute = navBackStackEntry?.destination?.route
+
         items.forEach { item ->
             BottomNavigationItem(
                 icon = {
                     if (item.messageCount != 0) {
-                        BadgeBox(backgroundColor = Color.White,
-                            contentColor = Color.Red,
+                        BadgeBox(backgroundColor = Color.Red,
+                            contentColor = Color.White,
                             badgeContent = { Text(text = "8") }
                         ) {
                             Icon(
@@ -109,8 +126,8 @@ fun BottomNavigationBar(navController: NavController) {
                     }
                 },
                 label = { Text(text = item.title) },
-                selectedContentColor = Color.Red,
-                unselectedContentColor = Color.White.copy(0.4f),
+                selectedContentColor = Color.Black,
+                unselectedContentColor = Color.Gray,
                 alwaysShowLabel = true,
                 selected = currentRoute == item.route,
                 onClick = {
@@ -120,10 +137,7 @@ fun BottomNavigationBar(navController: NavController) {
                                 saveState = true
                             }
                         }
-                        // Avoid multiple copies of the same destination when
-                        // reselecting the same item
                         launchSingleTop = true
-                        // Restore state when reselecting a previously selected item
                         restoreState = true
                     }
                 },
